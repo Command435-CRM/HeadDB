@@ -30,7 +30,7 @@ public abstract class SubCommand extends HeadDBCommand {
     }
 
     public void register() {
-        HeadDB.getInstance().getCommandManager().register(this);
+        HeadDB.getInstance().getCommandManager().orElseThrow().register(this);
     }
 
 }

@@ -10,6 +10,7 @@ spigot-id: 84967
 
 commands:
   headdb:
+    permission: headdb.admin
     usage: /headdb help
     description: Open the database
     aliases: ["hdb", "headdatabase", "headmenu"]

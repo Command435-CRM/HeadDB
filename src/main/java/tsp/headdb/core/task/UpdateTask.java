@@ -4,10 +4,12 @@ import org.bukkit.Bukkit;
 import tsp.headdb.HeadDB;
 import tsp.headdb.core.api.HeadAPI;
 import tsp.headdb.core.api.events.AsyncHeadsFetchedEvent;
+import tsp.headdb.core.storage.Storage;
 import tsp.headdb.implementation.head.Head;
 import tsp.nexuslib.task.Task;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class UpdateTask implements Task {
@@ -37,7 +39,9 @@ public class UpdateTask implements Task {
                             providerName,
                             time));
         });
-        HeadDB.getInstance().getStorage().getPlayerStorage().backup();
+        Optional<Storage> storage = HeadDB.getInstance().getStorage();
+        if(storage.isPresent())
+            storage.get().getPlayerStorage().backup();
         HeadDB.getInstance().getLog().debug("UpdateTask finished!");
     }
 

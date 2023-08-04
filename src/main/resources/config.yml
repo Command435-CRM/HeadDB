@@ -97,3 +97,6 @@ storage:
 
 # Debug Mode
 debug: false
+
+# API Mode: Disables commands, Guis, Only API
+only-api: false

@@ -19,6 +19,7 @@ import tsp.headdb.implementation.head.Head;
 import tsp.nexuslib.inventory.Button;
 import tsp.nexuslib.inventory.PagedPane;
 import tsp.nexuslib.inventory.Pane;
+import tsp.nexuslib.localization.TranslatableLocalization;
 import tsp.nexuslib.util.StringUtils;
 import tsp.nexuslib.util.Validate;
 
@@ -108,12 +109,14 @@ public class Utils {
     }
 
     public static void openFavoritesMenu(Player player) {
+        TranslatableLocalization localization = HeadDB.getInstance().getLocalization();
+
         List<Head> heads = HeadAPI.getFavoriteHeads(player.getUniqueId());
-        PagedPane main = Utils.createPaged(player, Utils.translateTitle(HeadDB.getInstance().getLocalization().getMessage(player.getUniqueId(), "menu.main.favorites.name").orElse("Favorites"), heads.size(), "Favorites"));
+        PagedPane main = Utils.createPaged(player, Utils.translateTitle(localization.getMessage(player.getUniqueId(), "menu.main.favorites.name").orElse("Favorites"), heads.size(), "Favorites"));
         for (Head head : heads) {
             main.addButton(new Button(head.getItem(player.getUniqueId()), fe -> {
                 if (!player.hasPermission("headdb.favorites")) {
-                    HeadDB.getInstance().getLocalization().sendMessage(player, "noAccessFavorites");
+                    localization.sendMessage(player, "noAccessFavorites");
                     return;
                 }
 
@@ -125,8 +128,11 @@ public class Utils {
 
                     Utils.purchase(player, head, amount);
                 } else if (fe.isRightClick()) {
-                    HeadDB.getInstance().getStorage().getPlayerStorage().removeFavorite(player.getUniqueId(), head.getTexture());
-                    HeadDB.getInstance().getLocalization().sendMessage(player, "removedFavorite", msg -> msg.replace("%name%", head.getName()));
+
+                    HeadDB.getInstance().getStorage().ifPresent(storage ->
+                            storage.getPlayerStorage().removeFavorite(player.getUniqueId(), head.getTexture()));
+
+                    localization.sendMessage(player, "removedFavorite", msg -> msg.replace("%name%", head.getName()));
                     openFavoritesMenu(player);
                 }
             }));
@@ -156,7 +162,9 @@ public class Utils {
                     purchase(player, head, amount);
                 } else if (e.isRightClick()) {
                     if (player.hasPermission("headdb.favorites")) {
-                        HeadDB.getInstance().getStorage().getPlayerStorage().addFavorite(player.getUniqueId(), head.getTexture());
+                        HeadDB.getInstance().getStorage().ifPresent(storage ->
+                                storage.getPlayerStorage().addFavorite(player.getUniqueId(), head.getTexture()));
+
                         HeadDB.getInstance().getLocalization().sendMessage(player, "addedFavorite", msg -> msg.replace("%name%", head.getName()));
                     } else {
                         HeadDB.getInstance().getLocalization().sendMessage(player, "noAccessFavorites");

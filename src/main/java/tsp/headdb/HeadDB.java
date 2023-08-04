@@ -13,7 +13,6 @@ import tsp.nexuslib.localization.TranslatableLocalization;
 import tsp.nexuslib.util.PluginUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
@@ -23,10 +22,10 @@ public class HeadDB extends NexusPlugin {
 
     private static HeadDB instance;
     private HeadDBLogger logger;
-    private TranslatableLocalization localization;
-    private Storage storage;
-    private BasicEconomyProvider economyProvider;
-    private CommandManager commandManager;
+    private Optional<TranslatableLocalization> localization = Optional.empty();
+    private Optional<Storage> storage = Optional.empty();
+    private Optional<BasicEconomyProvider> economyProvider = Optional.empty();
+    private Optional<CommandManager> commandManager = Optional.empty();
 
     @Override
     public void onStart(NexusPlugin nexusPlugin) {
@@ -38,13 +37,15 @@ public class HeadDB extends NexusPlugin {
         new UpdateTask(getConfig().getLong("refresh", 86400L)).schedule(this);
         instance.logger.info("Loaded " + loadLocalization() + " languages!");
 
-        instance.initStorage();
-        instance.initEconomy();
+        if(!getConfig().getBoolean("only-api")) {
+            instance.initStorage();
+            instance.initEconomy();
 
-        new PaneListener(this);
+            new PaneListener(this);
 
-        instance.commandManager = new CommandManager();
-        loadCommands();
+            instance.commandManager = Optional.of(new CommandManager());
+            loadCommands();
+        }
 
         initMetrics();
         ensureLatestVersion();
@@ -53,13 +54,14 @@ public class HeadDB extends NexusPlugin {
 
     @Override
     public void onDisable() {
-        if (storage != null) {
-            storage.getPlayerStorage().suspend();
+        if (storage.isPresent()) {
+            storage.get().getPlayerStorage().suspend();
             File langFile = new File(getDataFolder(), "langs.data");
             if (!langFile.exists()) {
                 try {
                     langFile.createNewFile();
-                    localization.saveLanguages(langFile);
+                    if(localization.isPresent())
+                        localization.get().saveLanguages(langFile);
                 } catch (IOException ex) {
                     logger.error("Failed to save receiver langauges!");
                     ex.printStackTrace();
@@ -92,18 +94,18 @@ public class HeadDB extends NexusPlugin {
     // Loaders
 
     private void initStorage() {
-        storage = new Storage(getConfig().getInt("storage.threads"));
-        storage.getPlayerStorage().init();
+        storage = Optional.of(new Storage(getConfig().getInt("storage.threads")));
+        storage.get().getPlayerStorage().init();
     }
 
     private int loadLocalization() {
-        instance.localization = new TranslatableLocalization(this, "messages");
+        instance.localization = Optional.of(new TranslatableLocalization(this, "messages"));
         try {
-            instance.localization.createDefaults();
-            int count = instance.localization.load();
+            instance.localization.get().createDefaults();
+            int count = instance.localization.get().load();
             File langFile = new File(getDataFolder(), "langs.data");
             if (langFile.exists()) {
-                localization.loadLanguages(langFile);
+                localization.get().loadLanguages(langFile);
             }
 
             return count;
@@ -118,24 +120,27 @@ public class HeadDB extends NexusPlugin {
     private void initEconomy() {
         if (!getConfig().getBoolean("economy.enabled")) {
             instance.logger.debug("Economy disabled by config.yml!");
-            instance.economyProvider = null;
+            instance.economyProvider = Optional.empty();
             return;
         }
 
         String raw = getConfig().getString("economy.provider", "VAULT");
         if (raw.equalsIgnoreCase("VAULT")) {
-            economyProvider = new VaultProvider();
+            economyProvider = Optional.of(new VaultProvider());
         }
 
-        economyProvider.init();
+        economyProvider.ifPresent(BasicEconomyProvider::init);
         instance.logger.info("Economy Provider: " + raw);
     }
 
     private void loadCommands() {
         PluginCommand main = getCommand("headdb");
         if (main != null) {
-            main.setExecutor(new CommandMain());
-            main.setTabCompleter(new CommandMain());
+            var mainCommand = new CommandMain();
+            main.setExecutor(mainCommand);
+            main.setTabCompleter(mainCommand);
+            localization.ifPresent(localization ->
+                    main.setPermissionMessage(localization.getConsoleMessage("noPermission").orElse("No Permissions!")));
         } else {
             instance.logger.error("Could not find main 'headdb' command!");
             this.setEnabled(false);
@@ -156,16 +161,16 @@ public class HeadDB extends NexusPlugin {
 
     // Getters
 
-    public Storage getStorage() {
+    public Optional<Storage> getStorage() {
         return storage;
     }
 
-    public CommandManager getCommandManager() {
+    public Optional<CommandManager> getCommandManager() {
         return commandManager;
     }
 
     public Optional<BasicEconomyProvider> getEconomyProvider() {
-        return Optional.ofNullable(economyProvider);
+        return economyProvider;
     }
 
     @SuppressWarnings("DataFlowIssue")
@@ -176,7 +181,7 @@ public class HeadDB extends NexusPlugin {
     }
 
     public TranslatableLocalization getLocalization() {
-        return localization;
+        return localization.orElseThrow();
     }
 
     public HeadDBLogger getLog() {

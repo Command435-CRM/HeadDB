@@ -3,6 +3,7 @@ package tsp.headdb.core.api;
 import org.bukkit.Bukkit;
 import tsp.headdb.HeadDB;
 import tsp.headdb.core.storage.PlayerData;
+import tsp.headdb.core.storage.Storage;
 import tsp.headdb.core.util.Utils;
 import tsp.headdb.implementation.category.Category;
 import tsp.headdb.implementation.head.Head;
@@ -165,7 +166,11 @@ public final class HeadAPI {
     @Nonnull
     public static List<Head> getFavoriteHeads(UUID player) {
         List<Head> result = new ArrayList<>();
-        Optional<PlayerData> data = HeadDB.getInstance().getStorage().getPlayerStorage().get(player);
+        Optional<Storage> storage = HeadDB.getInstance().getStorage();
+        if(storage.isEmpty())
+            return List.of();
+
+        Optional<PlayerData> data = storage.get().getPlayerStorage().get(player);
         data.ifPresent(playerData -> playerData.favorites()
                 .forEach(texture -> getHeadByTexture(texture)
                 .ifPresent(result::add))

@@ -1,8 +1,6 @@
 package tsp.headdb.core.command;
 
-import java.util.Arrays;
 import net.wesjd.anvilgui.AnvilGUI;
-import net.wesjd.anvilgui.AnvilGUI.Builder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -24,10 +22,7 @@ import tsp.nexuslib.util.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCompleter {
@@ -36,7 +31,7 @@ public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCo
         super(
                 "headdb",
                 "headdb.command.open",
-                HeadDB.getInstance().getCommandManager().getCommandsMap().values().stream().map(HeadDBCommand::getName).collect(Collectors.toList())
+                HeadDB.getInstance().getCommandManager().orElseThrow().getCommandsMap().values().stream().map(HeadDBCommand::getName).collect(Collectors.toList())
         );
     }
 
@@ -49,10 +44,6 @@ public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCo
                 return;
             }
 
-            if (!player.hasPermission(getPermission())) {
-                getLocalization().sendMessage(sender, "noPermission");
-                return;
-            }
             getLocalization().sendMessage(player.getUniqueId(), "openDatabase");
 
             Pane pane = new Pane(6, Utils.translateTitle(getLocalization().getMessage(player.getUniqueId(), "menu.main.title").orElse("&cHeadDB &7(" + HeadAPI.getTotalHeads() + ")"), HeadAPI.getTotalHeads(), "Main"));
@@ -162,7 +153,7 @@ public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCo
             return;
         }
 
-        getInstance().getCommandManager().getCommand(args[0]).ifPresentOrElse(command -> {
+        getInstance().getCommandManager().orElseThrow().getCommand(args[0]).ifPresentOrElse(command -> {
             if (sender instanceof Player player && !player.hasPermission(command.getPermission())) {
                 getLocalization().sendMessage(player.getUniqueId(), "noPermission");
                 return;
@@ -186,7 +177,7 @@ public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCo
         if (args.length == 0) {
             return new ArrayList<>(getCompletions());
         } else {
-            Optional<SubCommand> sub = getInstance().getCommandManager().getCommand(args[0]);
+            Optional<SubCommand> sub = getInstance().getCommandManager().orElseThrow().getCommand(args[0]);
             if (sub.isPresent()) {
                 return new ArrayList<>(sub.get().getCompletions());
             }
