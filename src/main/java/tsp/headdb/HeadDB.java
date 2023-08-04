@@ -45,7 +45,8 @@ public class HeadDB extends NexusPlugin {
 
             instance.commandManager = Optional.of(new CommandManager());
             loadCommands();
-        }
+        } else
+            getCommand("headdb").setUsage("Commands are disabled!");
 
         initMetrics();
         ensureLatestVersion();
