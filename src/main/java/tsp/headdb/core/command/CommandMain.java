@@ -22,7 +22,10 @@ import tsp.nexuslib.util.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCompleter {
@@ -63,9 +66,9 @@ public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCo
                                 Utils.addHeads(player, category, main, heads);
                                 main.selectPage(page);
                                 main.reRender();
-                                return Arrays.asList(AnvilGUI.ResponseAction.openInventory(main.getInventory()));
+                                return List.of(AnvilGUI.ResponseAction.openInventory(main.getInventory()));
                             } catch (NumberFormatException nfe) {
-                                return Arrays.asList(AnvilGUI.ResponseAction.replaceInputText("Invalid number!"));
+                                return List.of(AnvilGUI.ResponseAction.replaceInputText("Invalid number!"));
                             }
                         })
                         .text("Query")
@@ -130,9 +133,9 @@ public class CommandMain extends HeadDBCommand implements CommandExecutor, TabCo
                     Set<LocalHead> localHeads = HeadAPI.getLocalHeads();
                     PagedPane localPane = Utils.createPaged(player, Utils.translateTitle(getLocalization().getMessage(player.getUniqueId(), "menu.main.local.name").orElse("Local Heads"), localHeads.size(), "Local"));
                     for (LocalHead head : localHeads) {
-                        localPane.addButton(new Button(head.getItem(), le -> {
+                        localPane.addButton(new Button(head.getDecoratedItem(), le -> {
                             if (le.isLeftClick()) {
-                                ItemStack localItem = head.getItem();
+                                ItemStack localItem = head.getDecoratedItem();
                                 if (le.isShiftClick()) {
                                     localItem.setAmount(64);
                                 }

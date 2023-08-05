@@ -14,6 +14,17 @@ public record LocalHead(UUID uniqueId, String name) {
     public ItemStack getItem() {
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) item.getItemMeta();
+        if(meta == null) return item;
+
+        meta.setOwningPlayer(Bukkit.getOfflinePlayer(uniqueId));
+        item.setItemMeta(meta);
+
+        return item.clone();
+    }
+
+    public ItemStack getDecoratedItem() {
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) item.getItemMeta();
         if (meta != null) {
             meta.setOwningPlayer(Bukkit.getOfflinePlayer(uniqueId));
             meta.setDisplayName(ChatColor.GOLD + name);

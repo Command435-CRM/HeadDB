@@ -101,9 +101,9 @@ public class Utils {
     @SuppressWarnings("SpellCheckingInspection")
     public static PagedPane createPaged(Player player, String title) {
         PagedPane main = new PagedPane(4, 6, title);
-        HeadAPI.getHeadByTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODY1MmUyYjkzNmNhODAyNmJkMjg2NTFkN2M5ZjI4MTlkMmU5MjM2OTc3MzRkMThkZmRiMTM1NTBmOGZkYWQ1ZiJ9fX0=").ifPresent(head -> main.setBackItem(head.getItem(player.getUniqueId())));
-        HeadAPI.getHeadByTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2Q5MWY1MTI2NmVkZGM2MjA3ZjEyYWU4ZDdhNDljNWRiMDQxNWFkYTA0ZGFiOTJiYjc2ODZhZmRiMTdmNGQ0ZSJ9fX0=").ifPresent(head -> main.setCurrentItem(head.getItem(player.getUniqueId())));
-        HeadAPI.getHeadByTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMmEzYjhmNjgxZGFhZDhiZjQzNmNhZThkYTNmZTgxMzFmNjJhMTYyYWI4MWFmNjM5YzNlMDY0NGFhNmFiYWMyZiJ9fX0=").ifPresent(head -> main.setNextItem(head.getItem(player.getUniqueId())));
+        HeadAPI.getHeadByTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODY1MmUyYjkzNmNhODAyNmJkMjg2NTFkN2M5ZjI4MTlkMmU5MjM2OTc3MzRkMThkZmRiMTM1NTBmOGZkYWQ1ZiJ9fX0=").ifPresent(head -> main.setBackItem(head.getDecoratedItem(player.getUniqueId())));
+        HeadAPI.getHeadByTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2Q5MWY1MTI2NmVkZGM2MjA3ZjEyYWU4ZDdhNDljNWRiMDQxNWFkYTA0ZGFiOTJiYjc2ODZhZmRiMTdmNGQ0ZSJ9fX0=").ifPresent(head -> main.setCurrentItem(head.getDecoratedItem(player.getUniqueId())));
+        HeadAPI.getHeadByTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMmEzYjhmNjgxZGFhZDhiZjQzNmNhZThkYTNmZTgxMzFmNjJhMTYyYWI4MWFmNjM5YzNlMDY0NGFhNmFiYWMyZiJ9fX0=").ifPresent(head -> main.setNextItem(head.getDecoratedItem(player.getUniqueId())));
         main.setControlCurrent(new Button(main.getCurrentItem(), e -> Bukkit.dispatchCommand(player, "hdb")));
         return main;
     }
@@ -114,7 +114,7 @@ public class Utils {
         List<Head> heads = HeadAPI.getFavoriteHeads(player.getUniqueId());
         PagedPane main = Utils.createPaged(player, Utils.translateTitle(localization.getMessage(player.getUniqueId(), "menu.main.favorites.name").orElse("Favorites"), heads.size(), "Favorites"));
         for (Head head : heads) {
-            main.addButton(new Button(head.getItem(player.getUniqueId()), fe -> {
+            main.addButton(new Button(head.getDecoratedItem(player.getUniqueId()), fe -> {
                 if (!player.hasPermission("headdb.favorites")) {
                     localization.sendMessage(player, "noAccessFavorites");
                     return;
@@ -144,7 +144,7 @@ public class Utils {
     @ParametersAreNonnullByDefault
     public static void addHeads(Player player, @Nullable Category category, PagedPane pane, Collection<Head> heads) {
         for (Head head : heads) {
-            ItemStack item = head.getItem(player.getUniqueId());
+            ItemStack item = head.getDecoratedItem(player.getUniqueId());
             pane.addButton(new Button(item, e -> {
                 e.setCancelled(true);
 
@@ -217,7 +217,7 @@ public class Utils {
                     // Bukkit API, therefore task is ran sync.
                     Bukkit.getScheduler().runTask(HeadDB.getInstance(), () -> {
                         if (success) {
-                            ItemStack item = head.getItem(player.getUniqueId());
+                            ItemStack item = head.getDecoratedItem(player.getUniqueId());
                             item.setAmount(amount);
                             player.getInventory().addItem(item);
                             HeadDB.getInstance().getConfig().getStringList("commands.purchase").forEach(command -> {

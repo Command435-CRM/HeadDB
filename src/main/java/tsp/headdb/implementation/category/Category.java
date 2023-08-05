@@ -62,7 +62,7 @@ public enum Category {
         if (item == null) {
             HeadAPI.getHeads(this).stream().findFirst()
                     .ifPresentOrElse(head -> {
-                                ItemStack retrieved = new ItemStack(head.getItem(receiver));
+                                ItemStack retrieved = new ItemStack(head.getDecoratedItem(receiver));
                                 ItemMeta meta = retrieved.getItemMeta();
                                 if (meta != null && meta.getLore() != null) {
                                     meta.setDisplayName(Utils.translateTitle(HeadDB.getInstance().getLocalization().getMessage(receiver, "menu.main.category.name").orElse("&e" + getName()), HeadAPI.getHeads(this).size(), getName().toUpperCase(Locale.ROOT)));

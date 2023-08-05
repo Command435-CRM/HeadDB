@@ -2,6 +2,7 @@ package tsp.headdb.core.api;
 
 import org.bukkit.Bukkit;
 import tsp.headdb.HeadDB;
+import tsp.headdb.core.api.exceptions.APIOnlyException;
 import tsp.headdb.core.storage.PlayerData;
 import tsp.headdb.core.storage.Storage;
 import tsp.headdb.core.util.Utils;
@@ -162,13 +163,14 @@ public final class HeadAPI {
      *
      * @param player The players id
      * @return {@link Set<Head> Favorite Heads}
+     * @throws APIOnlyException This method only works in the normal mode!
      */
     @Nonnull
     public static List<Head> getFavoriteHeads(UUID player) {
         List<Head> result = new ArrayList<>();
         Optional<Storage> storage = HeadDB.getInstance().getStorage();
         if(storage.isEmpty())
-            return List.of();
+            throw new APIOnlyException();
 
         Optional<PlayerData> data = storage.get().getPlayerStorage().get(player);
         data.ifPresent(playerData -> playerData.favorites()

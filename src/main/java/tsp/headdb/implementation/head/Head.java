@@ -45,31 +45,35 @@ public class Head {
         this.category = category;
     }
 
-    public ItemStack getItem(UUID receiver) {
+    public ItemStack getItem() {
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+        GameProfile profile = new GameProfile(uniqueId, name);
+        ItemMeta meta = item.getItemMeta();
+        profile.getProperties().put("textures", new Property("textures", texture));
+        try {
+            //noinspection DataFlowIssue
+            Field profileField = meta.getClass().getDeclaredField("profile");
+            profileField.setAccessible(true);
+            profileField.set(meta, profile);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
+            //Log.error("Could not set skull owner for " + uuid.toString() + " | Stack Trace:");
+            ex.printStackTrace();
+        }
+
+        item.setItemMeta(meta);
+        return item.clone(); // Return clone that changes are not reflected
+    }
+
+    public ItemStack getDecoratedItem(UUID receiver) {
         if (item == null) {
             TranslatableLocalization localization = HeadDB.getInstance().getLocalization();
-            item = new ItemBuilder(Material.PLAYER_HEAD)
+            item = new ItemBuilder(getItem())
                     .name(localization.getMessage(receiver, "menu.head.name").orElse("&e" + name.toUpperCase(Locale.ROOT)).replace("%name%", name))
                     .setLore("&cID: " + id, "&7Tags: &e" + tags)
                     .build();
-
-            ItemMeta meta = item.getItemMeta();
-            GameProfile profile = new GameProfile(uniqueId, name);
-            profile.getProperties().put("textures", new Property("textures", texture));
-            try {
-                //noinspection DataFlowIssue
-                Field profileField = meta.getClass().getDeclaredField("profile");
-                profileField.setAccessible(true);
-                profileField.set(meta, profile);
-            } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
-                //Log.error("Could not set skull owner for " + uuid.toString() + " | Stack Trace:");
-                ex.printStackTrace();
-            }
-
-            item.setItemMeta(meta);
         }
 
-        return item.clone(); // Return clone that changes are not reflected
+        return item;
     }
 
     public int getId() {
