@@ -1,6 +1,7 @@
 package tsp.headdb;
 
 import org.bukkit.command.PluginCommand;
+import org.jetbrains.annotations.Nullable;
 import tsp.headdb.core.command.*;
 import tsp.headdb.core.economy.BasicEconomyProvider;
 import tsp.headdb.core.economy.VaultProvider;
@@ -16,53 +17,54 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
+import java.util.Objects;
 import java.util.Optional;
 
 public class HeadDB extends NexusPlugin {
 
     private static HeadDB instance;
     private HeadDBLogger logger;
-    private Optional<TranslatableLocalization> localization = Optional.empty();
-    private Optional<Storage> storage = Optional.empty();
-    private Optional<BasicEconomyProvider> economyProvider = Optional.empty();
-    private Optional<CommandManager> commandManager = Optional.empty();
+    private @Nullable TranslatableLocalization localization;
+    private @Nullable Storage storage;
+    private @Nullable BasicEconomyProvider economyProvider;
+    private @Nullable CommandManager commandManager;
 
     @Override
     public void onStart(NexusPlugin nexusPlugin) {
         instance = this;
-        instance.saveDefaultConfig();
-        instance.logger = new HeadDBLogger(getConfig().getBoolean("debug"));
-        instance.logger.info("Loading HeadDB - " + instance.getDescription().getVersion());
+        saveDefaultConfig();
+        logger = new HeadDBLogger(getConfig().getBoolean("debug"));
+        logger.info("Loading HeadDB - " + getDescription().getVersion());
 
         new UpdateTask(getConfig().getLong("refresh", 86400L)).schedule(this);
-        instance.logger.info("Loaded " + loadLocalization() + " languages!");
+        logger.info("Loaded " + loadLocalization() + " languages!");
 
         if(!getConfig().getBoolean("only-api")) {
-            instance.initStorage();
-            instance.initEconomy();
+            initStorage();
+            initEconomy();
 
             new PaneListener(this);
 
-            instance.commandManager = Optional.of(new CommandManager());
+            commandManager = new CommandManager();
             loadCommands();
         } else
-            getCommand("headdb").setUsage("Commands are disabled!");
+            Objects.requireNonNull(getCommand("headdb")).setUsage("Commands are disabled!");
 
         initMetrics();
         ensureLatestVersion();
-        instance.logger.info("Done!");
+        logger.info("Done!");
     }
 
     @Override
     public void onDisable() {
-        if (storage.isPresent()) {
-            storage.get().getPlayerStorage().suspend();
+        if (storage != null) {
+            storage.getPlayerStorage().suspend();
             File langFile = new File(getDataFolder(), "langs.data");
             if (!langFile.exists()) {
                 try {
                     langFile.createNewFile();
-                    if(localization.isPresent())
-                        localization.get().saveLanguages(langFile);
+                    if(localization != null)
+                        localization.saveLanguages(langFile);
                 } catch (IOException ex) {
                     logger.error("Failed to save receiver langauges!");
                     ex.printStackTrace();
@@ -86,8 +88,8 @@ public class HeadDB extends NexusPlugin {
     private void ensureLatestVersion() {
         PluginUtils.isLatestVersion(this, 84967, latest -> {
             if (Boolean.FALSE.equals(latest)) {
-                instance.logger.warning("There is a new update available for HeadDB on spigot!");
-                instance.logger.warning("Download: https://www.spigotmc.org/resources/84967");
+                logger.warning("There is a new update available for HeadDB on spigot!");
+                logger.warning("Download: https://www.spigotmc.org/resources/84967");
             }
         });
     }
@@ -95,23 +97,23 @@ public class HeadDB extends NexusPlugin {
     // Loaders
 
     private void initStorage() {
-        storage = Optional.of(new Storage(getConfig().getInt("storage.threads")));
-        storage.get().getPlayerStorage().init();
+        storage = new Storage(getConfig().getInt("storage.threads"));
+        storage.getPlayerStorage().init();
     }
 
     private int loadLocalization() {
-        instance.localization = Optional.of(new TranslatableLocalization(this, "messages"));
+        localization = new TranslatableLocalization(this, "messages");
         try {
-            instance.localization.get().createDefaults();
-            int count = instance.localization.get().load();
+            localization.createDefaults();
+            int count = localization.load();
             File langFile = new File(getDataFolder(), "langs.data");
             if (langFile.exists()) {
-                localization.get().loadLanguages(langFile);
+                localization.loadLanguages(langFile);
             }
 
             return count;
         } catch (URISyntaxException | IOException ex) {
-            instance.logger.error("Failed to load localization!");
+            logger.error("Failed to load localization!");
             ex.printStackTrace();
             this.setEnabled(false);
             return 0;
@@ -120,18 +122,21 @@ public class HeadDB extends NexusPlugin {
 
     private void initEconomy() {
         if (!getConfig().getBoolean("economy.enabled")) {
-            instance.logger.debug("Economy disabled by config.yml!");
-            instance.economyProvider = Optional.empty();
+            logger.debug("Economy disabled by config.yml!");
+            economyProvider = null;
             return;
         }
 
         String raw = getConfig().getString("economy.provider", "VAULT");
         if (raw.equalsIgnoreCase("VAULT")) {
-            economyProvider = Optional.of(new VaultProvider());
+            economyProvider = new VaultProvider();
         }
 
-        economyProvider.ifPresent(BasicEconomyProvider::init);
-        instance.logger.info("Economy Provider: " + raw);
+        if(economyProvider != null) {
+            economyProvider.init();
+            logger.info("Economy Provider: " + raw);
+        } else
+            logger.info("No Economy Provider found.");
     }
 
     private void loadCommands() {
@@ -140,10 +145,10 @@ public class HeadDB extends NexusPlugin {
             var mainCommand = new CommandMain();
             main.setExecutor(mainCommand);
             main.setTabCompleter(mainCommand);
-            localization.ifPresent(localization ->
-                    main.setPermissionMessage(localization.getConsoleMessage("noPermission").orElse("No Permissions!")));
+            if(localization != null)
+                    main.setPermissionMessage(localization.getConsoleMessage("noPermission").orElse("No Permissions!"));
         } else {
-            instance.logger.error("Could not find main 'headdb' command!");
+            logger.error("Could not find main 'headdb' command!");
             this.setEnabled(false);
             return;
         }
@@ -163,15 +168,15 @@ public class HeadDB extends NexusPlugin {
     // Getters
 
     public Optional<Storage> getStorage() {
-        return storage;
+        return Optional.ofNullable(storage);
     }
 
     public Optional<CommandManager> getCommandManager() {
-        return commandManager;
+        return Optional.ofNullable(commandManager);
     }
 
     public Optional<BasicEconomyProvider> getEconomyProvider() {
-        return economyProvider;
+        return Optional.ofNullable(economyProvider);
     }
 
     @SuppressWarnings("DataFlowIssue")
@@ -182,7 +187,8 @@ public class HeadDB extends NexusPlugin {
     }
 
     public TranslatableLocalization getLocalization() {
-        return localization.orElseThrow();
+        Objects.requireNonNull(localization);
+        return localization;
     }
 
     public HeadDBLogger getLog() {
